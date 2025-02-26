@@ -1,0 +1,368 @@
+local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+
+local Window = Library:CreateWindow({
+    -- Set Center to true if you want the menu to appear in the center
+    -- Set AutoShow to true if you want the menu to appear when it is created
+    -- Position and Size are also valid options here
+    -- but you do not need to define them unless you are changing them :)
+
+    Title = 'msword',
+    Center = true,
+    AutoShow = true,
+    TabPadding = 8,
+    MenuFadeTime = 1
+})
+
+-- CALLBACK NOTE:
+-- Passing in callback functions via the initial element parameters (i.e. Callback = function(Value)...) works
+-- HOWEVER, using Toggles/Options.INDEX:OnChanged(function(Value) ... ) is the RECOMMENDED way to do this.
+-- I strongly recommend decoupling UI code from logic code. i.e. Create your UI elements FIRST, and THEN setup :OnChanged functions later.
+
+-- You do not have to set your tabs & groups up this way, just a prefrence.
+local Tabs = {
+    -- Creates a new tab titled Main
+    Main = Window:AddTab('ESP'),
+    ['UI Settings'] = Window:AddTab('UI Settings'),
+}
+-- set some vals
+task.spawn(function()
+    while true do
+        getgenv().currentMap = tostring(game.ReplicatedStorage.CurrentMap.Value)
+        task.wait(1)
+    end
+end)
+getgenv().espscanintensity = 10
+
+
+
+local LeftGroupBox = Tabs.Main:AddLeftGroupbox('ESPs')
+LeftGroupBox:AddToggle('PlayerESP', {
+    Text = 'Player ESP',
+    Default = false,
+    Tooltip = 'Makes you see players through walls',
+
+    Callback = function(state)
+        local function clearOldESP()
+            for _, player in ipairs(game.Players:GetPlayers()) do
+                local character = player.Character
+                if character then
+                    local oldESP = character:FindFirstChild(player.Name .. "'s ESP")
+                    if oldESP then
+                        oldESP:Destroy()
+                    end
+                end
+            end
+        end
+    
+        if state then
+            clearOldESP()
+    
+            if getgenv().LoopPlayerESP then
+                getgenv().LoopPlayerESP:Disconnect()
+                getgenv().LoopPlayerESP = nil
+            end
+    
+            getgenv().LoopPlayerESP = game:GetService("RunService").Stepped:Connect(function()
+                for _, player in ipairs(game.Players:GetPlayers()) do
+                    if player ~= game.Players.LocalPlayer then
+                        local character = player.Character
+                        if character then
+                            local espFolder = character:FindFirstChild(player.Name .. "'s ESP") or Instance.new("Folder", character)
+                            espFolder.Name = player.Name .. "'s ESP"
+    
+                            local isBeast = false
+                            local statsModule = player:FindFirstChild("TempPlayerStatsModule")
+                            if statsModule then
+                                local beastValue = statsModule:FindFirstChild("IsBeast")
+                                isBeast = beastValue and beastValue.Value
+                            end
+    
+                            local espColor = isBeast and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
+    
+                            for _, part in ipairs(character:GetChildren()) do
+                                if part:IsA("BasePart") then
+                                    local adornment = espFolder:FindFirstChild(part.Name .. " ESP") or Instance.new("BoxHandleAdornment", espFolder)
+                                    adornment.Name = part.Name .. " ESP"
+                                    adornment.Adornee = part
+                                    adornment.Size = part.Size
+                                    adornment.Transparency = 0.5
+                                    adornment.AlwaysOnTop = true
+                                    adornment.ZIndex = 2
+                                    adornment.Color3 = espColor
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if getgenv().LoopPlayerESP then
+                clearOldESP()
+                getgenv().LoopPlayerESP:Disconnect()
+                getgenv().LoopPlayerESP = nil
+            end
+        end
+    end
+})
+
+LeftGroupBox:AddToggle('DoorESP', {
+    Text = "Door ESP",
+    Default = false,
+    Tooltip = 'Makes you able to see doors. Can be used for escaping sticky situations',
+    
+    Callback = function(state)
+        getgenv().DoorESP = state
+        if state then
+            task.spawn(function()
+                while getgenv().DoorESP do
+                    task.wait(getgenv().espscanintensity) -- Prevent excessive looping
+            
+                    local currentMap = getgenv().currentMap
+                    if not currentMap or currentMap == "" then
+                        warn("DoorESP: currentMap is nil or empty")
+                    end
+            
+                    local mapInstance = game.workspace:FindFirstChild(currentMap)
+                    if not mapInstance then
+                        warn("DoorESP: Map not found in workspace:", currentMap)
+                    end
+            
+                    for _, v in ipairs(mapInstance:GetDescendants()) do
+                        pcall(function()
+                            if v.Name == "SingleDoor" or v.Name == "DoubleDoor" then
+                                local doorParts = {}
+                                if v.Name == "SingleDoor" then
+                                    table.insert(doorParts, v:FindFirstChild("Door"))
+                                elseif v.Name == "DoubleDoor" then
+                                    table.insert(doorParts, v:FindFirstChild("DoorL"))
+                                    table.insert(doorParts, v:FindFirstChild("DoorR"))
+                                end
+            
+                                for _, doorPart in ipairs(doorParts) do
+                                    if doorPart then
+                                        local highlight = doorPart:FindFirstChild("Highlight")
+                                        if not highlight then
+                                            highlight = Instance.new("Highlight")
+                                            highlight.Name = "Highlight"
+                                            highlight.Parent = doorPart
+                                        end
+            
+                                        local actionSignValue = v:FindFirstChild("DoorTrigger") and v.DoorTrigger:FindFirstChild("ActionSign") and v.DoorTrigger.ActionSign.Value
+                                        if actionSignValue == 11 then
+                                            highlight.FillColor = Color3.new(0, 1, 0) -- Green
+                                        elseif actionSignValue == 10 then
+                                            highlight.FillColor = Color3.new(1, 0, 0) -- Red
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                    end
+                end
+            end)
+
+        else
+            -- Cleanup: Remove all highlights
+            for _, v in ipairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do
+                pcall(function()
+                    if v.Name == "SingleDoor" or v.Name == "DoubleDoor" then
+                        local doorParts = { v:FindFirstChild("Door"), v:FindFirstChild("DoorL"), v:FindFirstChild("DoorR") }
+                        for _, doorPart in ipairs(doorParts) do
+                            if doorPart then
+                                local highlight = doorPart:FindFirstChild("Highlight")
+                                if highlight then
+                                    highlight:Destroy()
+                                end
+                            end
+                        end
+                    end  
+                end)
+            end
+        end
+    end
+})
+
+LeftGroupBox:AddToggle('ComputerESP', {
+    Text = "Computer ESP",
+    Default = false,
+    Tooltip = 'Be able to see computers.',
+    
+    Callback = function(state)
+        if state then
+            getgenv().StopComputerESP = false
+    
+            task.spawn(function()
+                while not getgenv().StopComputerESP do
+                    task.wait(getgenv().espscanintensity)
+            
+                    local currentMap = getgenv().currentMap
+                    if not currentMap or currentMap == "" then
+                        warn("ComputerESP: currentMap is nil or empty")
+                    end
+            
+                    local mapInstance = game.workspace:FindFirstChild(currentMap)
+                    if not mapInstance then
+                        warn("ComputerESP: Map not found in workspace:", currentMap)
+                    end
+            
+                    for _, v in ipairs(mapInstance:GetDescendants()) do
+                        if v.Name == "ComputerTable" then
+                            pcall(function()
+                                local screen = v:FindFirstChild("Screen")
+                                if screen then
+                                    local highlight = v:FindFirstChild("Highlight")
+                                    if not highlight then
+                                        highlight = Instance.new("Highlight")
+                                        highlight.Parent = v
+                                    end
+            
+                                    -- Set highlight color based on screen's BrickColor
+                                    if screen.BrickColor == BrickColor.new("Bright blue") then
+                                        highlight.FillColor = Color3.new(0, 0, 1) -- Blue
+                                    elseif screen.BrickColor == BrickColor.new("Dark green") then
+                                        highlight.FillColor = Color3.new(0, 1, 0) -- Green
+                                    end
+                                end
+                            end)
+                        end
+                    end
+                    task.wait(getgenv().espscanintensity) -- Wait before next iteration to reduce performance impact
+                end
+            end)
+
+        else
+            getgenv().StopComputerESP = true
+    
+            -- Cleanup existing ESP highlights
+            for _, v in ipairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do
+                if v.Name == "ComputerTable" then
+                    pcall(function()
+                        local highlight = v:FindFirstChild("Highlight")
+                        if highlight then
+                            highlight:Destroy()
+                        end
+                    end)
+                end
+            end
+        end
+    end
+})
+
+LeftGroupBox:AddToggle('FreezePodESP', {
+    Text = 'FreezePod ESP',
+    Default = false,
+    Tooltip = 'Be able to see freeze pods.',
+    
+    Callback = function(state)
+        if state == true then
+            for i,v in pairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do 
+                task.wait(getgenv().espscanintensity)
+                if v.Name == "FreezePod" then
+                    pcall(function()
+                        local ESP = Instance.new("Highlight",v)
+                    end)
+                end
+            end
+        else
+            for i,v in pairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do 
+                if v.Name == "FreezePod" then
+                    pcall(function()
+                        v.Highlight:Destroy()
+                    end)
+                end
+            end
+        end
+    end
+})
+
+local RightGroupBox = Tabs.Main:AddRightGroupbox('ESP Settings')
+RightGroupBox:AddSlider('ScanIntensitySlider', {
+    Text = 'Scan Intensity',
+    Default = 10,
+    Min = 1,
+    Max = 20,
+    Rounding = 1
+});
+
+
+getgenv().Options.ScanIntensitySlider:OnChanged(function()
+    getgenv().espscanintensity = getgenv().Options.ScanIntensitySlider.Value
+end)
+
+-- Library functions
+-- Sets the watermark visibility
+Library:SetWatermarkVisibility(true)
+
+-- Example of dynamically-updating watermark with common traits (fps and ping)
+local FrameTimer = tick()
+local FrameCounter = 0;
+local FPS = 60;
+
+local WatermarkConnection = game:GetService('RunService').RenderStepped:Connect(function()
+    FrameCounter = FrameCounter + 1;
+
+    if (tick() - FrameTimer) >= 1 then
+        FPS = FrameCounter;
+        FrameTimer = tick();
+        FrameCounter = 0;
+    end;
+
+    Library:SetWatermark(('msword | %s fps | %s ms'):format(
+        math.floor(FPS),
+        math.floor(game:GetService('Stats').Network.ServerStatsItem['Data Ping']:GetValue())
+    ));
+end);
+
+Library.KeybindFrame.Visible = false; -- todo: add a function for this
+
+Library:OnUnload(function()
+    WatermarkConnection:Disconnect()
+
+    print('Unloaded!')
+    Library.Unloaded = true
+end)
+
+-- UI Settings
+local MenuGroup = Tabs['UI Settings']:AddLeftGroupbox('Menu')
+
+-- I set NoUI so it does not show up in the keybinds menu
+MenuGroup:AddButton('Unload', function() Library:Unload() end)
+MenuGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', { Default = 'End', NoUI = true, Text = 'Menu keybind' })
+
+Library.ToggleKeybind = Options.MenuKeybind -- Allows you to have a custom keybind for the menu
+
+-- Addons:
+-- SaveManager (Allows you to have a configuration system)
+-- ThemeManager (Allows you to have a menu theme system)
+
+-- Hand the library over to our managers
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+-- Ignore keys that are used by ThemeManager.
+-- (we dont want configs to save themes, do we?)
+SaveManager:IgnoreThemeSettings()
+
+-- Adds our MenuKeybind to the ignore list
+-- (do you want each config to have a different menu key? probably not.)
+SaveManager:SetIgnoreIndexes({ 'MenuKeybind' })
+
+-- use case for doing it this way:
+-- a script hub could have themes in a global folder
+-- and game configs in a separate folder per game
+ThemeManager:SetFolder('MyScriptHub')
+SaveManager:SetFolder('MyScriptHub/specific-game')
+
+-- Builds our config menu on the right side of our tab
+SaveManager:BuildConfigSection(Tabs['UI Settings'])
+
+-- Builds our theme menu (with plenty of built in themes) on the left side
+-- NOTE: you can also call ThemeManager:ApplyToGroupbox to add it to a specific groupbox
+ThemeManager:ApplyToTab(Tabs['UI Settings'])
+
+-- You can use the SaveManager:LoadAutoloadConfig() to load a config
+-- which has been marked to be one that auto loads!
+SaveManager:LoadAutoloadConfig()
