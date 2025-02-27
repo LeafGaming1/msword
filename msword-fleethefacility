@@ -1,4 +1,4 @@
-local repo = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+local repo = 'https://raw.githubusercontent.com/mstudio45/LinoriaLib/main/'
 local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
 local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
 local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
@@ -13,7 +13,8 @@ local Window = Library:CreateWindow({
     Center = true,
     AutoShow = true,
     TabPadding = 8,
-    MenuFadeTime = 1
+    MenuFadeTime = 1,
+    ShowCustomCursor = false
 })
 
 -- CALLBACK NOTE:
@@ -25,6 +26,10 @@ local Window = Library:CreateWindow({
 local Tabs = {
     -- Creates a new tab titled Main
     Main = Window:AddTab('ESP'),
+    Beast = Window:AddTab('Beast'),
+    NonBeast = Window:AddTab('NonBeast'),
+    Player = Window:AddTab('Player'),
+    Misc = Window:AddTab('Misc'),
     ['UI Settings'] = Window:AddTab('UI Settings'),
 }
 -- set some vals
@@ -37,228 +42,216 @@ end)
 getgenv().espscanintensity = 10
 
 
-
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox('ESPs')
+local function clearPlrEsp()
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        local character = player.Character
+        if character then
+            local oldESP = character:FindFirstChild(player.Name .. "'s ESP")
+            if oldESP then
+                oldESP:Destroy()
+            end
+        end
+    end
+end
 LeftGroupBox:AddToggle('PlayerESP', {
     Text = 'Player ESP',
     Default = false,
     Tooltip = 'Makes you see players through walls',
 
     Callback = function(state)
-        local function clearOldESP()
+        
+        clearPlrEsp()
+        
+        while state do
+            task.wait(getgenv().espscanintensity)
             for _, player in ipairs(game.Players:GetPlayers()) do
-                local character = player.Character
-                if character then
-                    local oldESP = character:FindFirstChild(player.Name .. "'s ESP")
-                    if oldESP then
-                        oldESP:Destroy()
-                    end
-                end
-            end
-        end
-    
-        if state then
-            clearOldESP()
-    
-            if getgenv().LoopPlayerESP then
-                getgenv().LoopPlayerESP:Disconnect()
-                getgenv().LoopPlayerESP = nil
-            end
-    
-            getgenv().LoopPlayerESP = game:GetService("RunService").Stepped:Connect(function()
-                for _, player in ipairs(game.Players:GetPlayers()) do
-                    if player ~= game.Players.LocalPlayer then
-                        local character = player.Character
-                        if character then
-                            local espFolder = character:FindFirstChild(player.Name .. "'s ESP") or Instance.new("Folder", character)
-                            espFolder.Name = player.Name .. "'s ESP"
-    
-                            local isBeast = false
-                            local statsModule = player:FindFirstChild("TempPlayerStatsModule")
-                            if statsModule then
-                                local beastValue = statsModule:FindFirstChild("IsBeast")
-                                isBeast = beastValue and beastValue.Value
-                            end
-    
-                            local espColor = isBeast and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 255, 0)
-    
-                            for _, part in ipairs(character:GetChildren()) do
-                                if part:IsA("BasePart") then
-                                    local adornment = espFolder:FindFirstChild(part.Name .. " ESP") or Instance.new("BoxHandleAdornment", espFolder)
-                                    adornment.Name = part.Name .. " ESP"
-                                    adornment.Adornee = part
-                                    adornment.Size = part.Size
-                                    adornment.Transparency = 0.5
-                                    adornment.AlwaysOnTop = true
-                                    adornment.ZIndex = 2
-                                    adornment.Color3 = espColor
+                if player ~= game.Players.LocalPlayer then
+                    local character = player.Character
+                    if character then
+                        local espFolder = character:FindFirstChild(player.Name .. "'s ESP") or Instance.new("Folder", character)
+                        espFolder.Name = player.Name .. "'s ESP"
+                        local isBeast = false
+                        local statsModule = player:FindFirstChild("TempPlayerStatsModule")
+                        if statsModule then
+                            local beastValue = statsModule:FindFirstChild("IsBeast")
+                            isBeast = beastValue and beastValue.Value
+                        end
+                        local beastColor = Color3.fromRGB(255, 0, 0) 
+                        local nonBeastEsp = Color3.fromRGB(0, 255, 0)
+                        for _, part in ipairs(character:GetChildren()) do
+                            if part:IsA("BasePart") then
+                                local adornment = espFolder:FindFirstChild(part.Name .. " ESP") or Instance.new("BoxHandleAdornment", espFolder)
+                                adornment.Name = part.Name .. " ESP"
+                                adornment.Adornee = part
+                                adornment.Size = part.Size
+                                adornment.Transparency = 0.5
+                                adornment.AlwaysOnTop = true
+                                adornment.ZIndex = 2
+                                if isBeast then
+                                    adornment.Color3 = beastColor
+                                else
+                                    adornment.Color3 = nonBeastEsp
                                 end
                             end
                         end
                     end
                 end
-            end)
-        else
-            if getgenv().LoopPlayerESP then
-                clearOldESP()
-                getgenv().LoopPlayerESP:Disconnect()
-                getgenv().LoopPlayerESP = nil
             end
         end
+        
+        clearPlrEsp()
     end
 })
-
+local function clearDoorEsp()
+    for _, v in ipairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do
+        pcall(function()
+            if v.Name == "SingleDoor" or v.Name == "DoubleDoor" then
+                local doorParts = { v:FindFirstChild("Door"), v:FindFirstChild("DoorL"), v:FindFirstChild("DoorR") }
+                for _, doorPart in ipairs(doorParts) do
+                    if doorPart then
+                        local highlight = doorPart:FindFirstChild("Highlight")
+                        if highlight then
+                            highlight:Destroy()
+                        end
+                    end
+                end
+            end  
+        end)
+    end
+end
 LeftGroupBox:AddToggle('DoorESP', {
     Text = "Door ESP",
     Default = false,
     Tooltip = 'Makes you able to see doors. Can be used for escaping sticky situations',
     
     Callback = function(state)
-        getgenv().DoorESP = state
-        if state then
-            task.spawn(function()
-                while getgenv().DoorESP do
-                    task.wait(getgenv().espscanintensity) -- Prevent excessive looping
+        clearDoorEsp()
+        while state do
+            task.wait(2)
+            task.wait(getgenv().espscanintensity) -- Prevent excessive looping
             
-                    local currentMap = getgenv().currentMap
-                    if not currentMap or currentMap == "" then
-                        warn("DoorESP: currentMap is nil or empty")
-                    end
-            
-                    local mapInstance = game.workspace:FindFirstChild(currentMap)
-                    if not mapInstance then
-                        warn("DoorESP: Map not found in workspace:", currentMap)
-                    end
-            
-                    for _, v in ipairs(mapInstance:GetDescendants()) do
-                        pcall(function()
-                            if v.Name == "SingleDoor" or v.Name == "DoubleDoor" then
-                                local doorParts = {}
-                                if v.Name == "SingleDoor" then
-                                    table.insert(doorParts, v:FindFirstChild("Door"))
-                                elseif v.Name == "DoubleDoor" then
-                                    table.insert(doorParts, v:FindFirstChild("DoorL"))
-                                    table.insert(doorParts, v:FindFirstChild("DoorR"))
-                                end
-            
-                                for _, doorPart in ipairs(doorParts) do
-                                    if doorPart then
-                                        local highlight = doorPart:FindFirstChild("Highlight")
-                                        if not highlight then
-                                            highlight = Instance.new("Highlight")
-                                            highlight.Name = "Highlight"
-                                            highlight.Parent = doorPart
-                                        end
-            
-                                        local actionSignValue = v:FindFirstChild("DoorTrigger") and v.DoorTrigger:FindFirstChild("ActionSign") and v.DoorTrigger.ActionSign.Value
-                                        if actionSignValue == 11 then
-                                            highlight.FillColor = Color3.new(0, 1, 0) -- Green
-                                        elseif actionSignValue == 10 then
-                                            highlight.FillColor = Color3.new(1, 0, 0) -- Red
-                                        end
-                                    end
-                                end
-                            end
-                        end)
-                    end
-                end
-            end)
-
-        else
-            -- Cleanup: Remove all highlights
-            for _, v in ipairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do
-                pcall(function()
-                    if v.Name == "SingleDoor" or v.Name == "DoubleDoor" then
-                        local doorParts = { v:FindFirstChild("Door"), v:FindFirstChild("DoorL"), v:FindFirstChild("DoorR") }
+            local currentMap = getgenv().currentMap
+            if not currentMap or currentMap == "" then
+                print("DoorESP: currentMap is nil or empty")
+            end
+        
+            local mapInstance = game.workspace:FindFirstChild(currentMap)
+            if not mapInstance then
+                print("DoorESP: Map not found in workspace:", currentMap)
+            else
+        
+                for _, v in ipairs(mapInstance:GetDescendants()) do
+                    pcall(function()
+                        if v.Name == "SingleDoor" or v.Name == "DoubleDoor" then
+                            local doorParts = {}
+                            if v.Name == "SingleDoor" then
+                                table.insert(doorParts, v:FindFirstChild("Door"))
+                            elseif v.Name == "DoubleDoor" then
+                                table.insert(doorParts, v:FindFirstChild("DoorL"))
+                                table.insert(doorParts, v:FindFirstChild("DoorR"))
+                        end
                         for _, doorPart in ipairs(doorParts) do
                             if doorPart then
                                 local highlight = doorPart:FindFirstChild("Highlight")
-                                if highlight then
-                                    highlight:Destroy()
+                                if not highlight then
+                                    highlight = Instance.new("Highlight")
+                                    highlight.Name = "Highlight"
+                                    highlight.Parent = doorPart
+                                end
+                                local actionSignValue = v:FindFirstChild("DoorTrigger") and v.DoorTrigger:FindFirstChild("ActionSign") and v.DoorTrigger.ActionSign.Value
+                                if actionSignValue == 11 then
+                                    highlight.FillColor = Color3.new(0, 1, 0) -- Green
+                                    elseif actionSignValue == 10 then
+                                        highlight.FillColor = Color3.new(1, 0, 0) -- Red
+                                    end
                                 end
                             end
                         end
-                    end  
-                end)
+                    end)
+                end
             end
         end
+        clearDoorEsp()
     end
 })
-
+local function clearComputerEsp()
+    for _, v in ipairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do
+        if v.Name == "ComputerTable" then
+            pcall(function()
+                local highlight = v:FindFirstChild("Highlight")
+                if highlight then
+                    highlight:Destroy()
+                end
+            end)
+        end
+    end
+end
 LeftGroupBox:AddToggle('ComputerESP', {
     Text = "Computer ESP",
     Default = false,
     Tooltip = 'Be able to see computers.',
     
     Callback = function(state)
-        if state then
-            getgenv().StopComputerESP = false
-    
-            task.spawn(function()
-                while not getgenv().StopComputerESP do
-                    task.wait(getgenv().espscanintensity)
+        clearComputerEsp()
+        while state do
+            task.wait(4)
+            task.wait(getgenv().espscanintensity)
             
-                    local currentMap = getgenv().currentMap
-                    if not currentMap or currentMap == "" then
-                        warn("ComputerESP: currentMap is nil or empty")
-                    end
-            
-                    local mapInstance = game.workspace:FindFirstChild(currentMap)
-                    if not mapInstance then
-                        warn("ComputerESP: Map not found in workspace:", currentMap)
-                    end
-            
-                    for _, v in ipairs(mapInstance:GetDescendants()) do
-                        if v.Name == "ComputerTable" then
-                            pcall(function()
-                                local screen = v:FindFirstChild("Screen")
-                                if screen then
-                                    local highlight = v:FindFirstChild("Highlight")
-                                    if not highlight then
-                                        highlight = Instance.new("Highlight")
-                                        highlight.Parent = v
-                                    end
-            
-                                    -- Set highlight color based on screen's BrickColor
-                                    if screen.BrickColor == BrickColor.new("Bright blue") then
-                                        highlight.FillColor = Color3.new(0, 0, 1) -- Blue
-                                    elseif screen.BrickColor == BrickColor.new("Dark green") then
-                                        highlight.FillColor = Color3.new(0, 1, 0) -- Green
-                                    end
+            local currentMap = getgenv().currentMap
+            if not currentMap or currentMap == "" then
+                print("ComputerESP: currentMap is nil or empty")
+            end
+        
+            local mapInstance = game.workspace:FindFirstChild(currentMap)
+            if not mapInstance then
+                print("ComputerESP: Map not found in workspace")
+            else
+                for _, v in ipairs(mapInstance:GetDescendants()) do
+                    if v.Name == "ComputerTable" then
+                        pcall(function()
+                            local screen = v:FindFirstChild("Screen")
+                            if screen then
+                                local highlight = v:FindFirstChild("Highlight")
+                                if not highlight then
+                                    highlight = Instance.new("Highlight")
+                                    highlight.Parent = v
                                 end
-                            end)
-                        end
+                                                -- Set highlight color based on screen's BrickColor
+                                if screen.BrickColor == BrickColor.new("Bright blue") then
+                                    highlight.FillColor = Color3.new(0, 0, 1) -- Blue
+                                elseif screen.BrickColor == BrickColor.new("Dark green") then
+                                    highlight.FillColor = Color3.new(0, 1, 0) -- Green
+                                end
+                            end
+                        end)
                     end
-                    task.wait(getgenv().espscanintensity) -- Wait before next iteration to reduce performance impact
-                end
-            end)
-
-        else
-            getgenv().StopComputerESP = true
-    
-            -- Cleanup existing ESP highlights
-            for _, v in ipairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do
-                if v.Name == "ComputerTable" then
-                    pcall(function()
-                        local highlight = v:FindFirstChild("Highlight")
-                        if highlight then
-                            highlight:Destroy()
-                        end
-                    end)
                 end
             end
         end
+        clearComputerEsp()
     end
 })
-
+local function clearFreezePodEsp()
+    for i,v in pairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do 
+        if v.Name == "FreezePod" then
+            pcall(function()
+                v.Highlight:Destroy()
+            end)
+        end
+    end
+end
 LeftGroupBox:AddToggle('FreezePodESP', {
     Text = 'FreezePod ESP',
     Default = false,
     Tooltip = 'Be able to see freeze pods.',
     
     Callback = function(state)
-        if state == true then
+        clearFreezePodEsp()
+        while state do
+            clearFreezePodEsp()
             for i,v in pairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do 
+                task.wait(6)
                 task.wait(getgenv().espscanintensity)
                 if v.Name == "FreezePod" then
                     pcall(function()
@@ -266,18 +259,28 @@ LeftGroupBox:AddToggle('FreezePodESP', {
                     end)
                 end
             end
-        else
-            for i,v in pairs(game.workspace:FindFirstChild(tostring(getgenv().currentMap)):GetDescendants()) do 
-                if v.Name == "FreezePod" then
-                    pcall(function()
-                        v.Highlight:Destroy()
-                    end)
-                end
-            end
         end
+        clearFreezePodEsp()
     end
 })
-
+local function clearEsps()
+    local PlrSuccess, PlrError = pcall(function()
+        clearPlrEsp()
+    end)
+    if not PlrSuccess then warn("Player ESP Error: "..PlrError) end
+    local DoorSuccess, DoorError = pcall(function()
+        clearDoorEsp()
+    end)
+    if not DoorSuccess then warn("Door ESP Error: "..DoorError) end
+    local ComputerSuccess, ComputerError = pcall(function()
+        clearComputerEsp()
+    end)
+    if not ComputerSuccess then warn("Computer ESP Error: "..ComputerError) end
+    local FreezePodSuccess, FreezePodError = pcall(function()
+        clearPlrEsp()
+    end)
+    if not PlrSuccess then warn("FreezePod ESP Error: "..FreezePodError) end
+end
 local RightGroupBox = Tabs.Main:AddRightGroupbox('ESP Settings')
 RightGroupBox:AddSlider('ScanIntensitySlider', {
     Text = 'Scan Intensity',
@@ -286,11 +289,411 @@ RightGroupBox:AddSlider('ScanIntensitySlider', {
     Max = 20,
     Rounding = 1
 });
-
-
 getgenv().Options.ScanIntensitySlider:OnChanged(function()
     getgenv().espscanintensity = getgenv().Options.ScanIntensitySlider.Value
 end)
+
+local LeftGroupBox = Tabs.Beast:AddLeftGroupbox('Beast functions')
+LeftGroupBox:AddToggle("InfiteSprint", {
+    Text = 'Infinite Sprint',
+    Default = false,
+    Tooltip = 'Have infinte sprint.',
+    
+    Callback = function(state)
+        local player = game.Players.LocalPlayer
+        
+        game.UserInputService.InputBegan:Connect(function(key)
+            if key.KeyCode == Enum.KeyCode.Q then
+                game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 30
+            end
+        end)
+            
+        game.UserInputService.InputEnded:Connect(function(key)
+            if key.KeyCode == Enum.KeyCode.Q then
+                game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+            end
+        end)
+    end
+})
+LeftGroupBox:AddToggle("NoSlow", {
+    Text = "No Slow",
+    Default = false,
+    Tooltip = 'No slow effects when jumping',
+    
+    Callback = function(state)
+        local slowscript
+        local slowscriptCopy
+
+        if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == true then
+            pcall(function()
+                slowscript = game.Players.LocalPlayer.Character.PowersLocalScript
+                slowscriptCopy = slowscript:Clone()
+                slowscriptCopy.Parent = game.ReplicatedFirst
+            end)
+        end
+        
+        while state do
+            if slowscript then
+                slowscript:Destroy()
+            end
+            task.wait(5)
+        end
+        if not slowscript and slowscriptCopy then
+            local slowscriptCopyOriginal = slowscriptCopy:Clone()
+            slowscriptCopyOriginal.Parent = game.Players.LocalPlayer.Character
+            slowscriptCopy:Destroy()
+        end
+    end
+})
+LeftGroupBox:AddToggle("EnableCrawl", {
+    Text = "Enable Crawl",
+    Default = false,
+    Tooltip = 'Allows you to crawl like normal players',
+    
+    Callback = function(state)
+        while state do
+            if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == false then
+                game:GetService("Players").LocalPlayer.TempPlayerStatsModule.DisableCrawl.Value = false
+            end
+            task.wait(5)
+        end
+        
+        if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == false then
+            game:GetService("Players").LocalPlayer.TempPlayerStatsModule.DisableCrawl.Value = true
+        end
+    end
+})
+LeftGroupBox:AddButton({
+    Text = 'Fix camera',
+    Func = function()
+        local player = game.Players.LocalPlayer
+
+    	workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChildWhichIsA('Humanoid')
+    	workspace.CurrentCamera.CameraType = "Custom"
+    	player.CameraMinZoomDistance = 0.5
+    	player.CameraMaxZoomDistance = math.huge
+    	player.CameraMode = "Classic"
+    	player.Character.Head.Anchored = false
+    end,
+    DoubleClick = false,
+    Tooltip = 'Fixes your camera (can be used for normal players too)'
+})
+
+local LeftGroupBox = Tabs.NonBeast:AddLeftGroupbox('Non-Beast functions')
+LeftGroupBox:AddToggle("NoFail", {
+    Text = "No fail on hack",
+    Default = false,
+    Tooltip = "Prevents from failing the minigame when hacking",
+    
+    Callback = function(state)
+        while state do
+            task.spawn(function()
+                while task.wait() do
+                    game.ReplicatedStorage.RemoteEvent:FireServer("SetPlayerMinigameResult",true)
+                end
+            end)
+            task.wait(2)
+        end
+    end
+})
+LeftGroupBox:AddToggle("NonBeastSprint", {
+    Text = "Q to sprint",
+    Default = false,
+    Tooltip = "Allows you to sprint when not beast.",
+    
+    Callback = function(state)
+        while state do
+            if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == false then
+                game.UserInputService.InputBegan:Connect(function(key)
+                    if key.KeyCode == Enum.KeyCode.Q then
+                        if state then
+                            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 30
+                        end
+                    end
+                end)
+                
+                game.UserInputService.InputEnded:Connect(function(key)
+                    if key.KeyCode == Enum.KeyCode.Q then
+                        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+                    end
+                end)
+            end
+            task.wait(2)
+        end
+        
+    end
+})
+
+local LeftGroupBox = Tabs.Player:AddLeftGroupbox('Player functions')
+LeftGroupBox:AddButton({
+    Text = "Invisible (F)",
+    
+    Func = function()
+        local Global = getgenv and getgenv()
+        local First = true
+        local Restart = true
+        local SoundService = game:GetService("SoundService")
+        local StoredCF
+        local SafeZone
+        if Global.SafeZone ~= nil then
+        	if type(Global.SafeZone) ~= "userdata" then return error("CFrame must be a userdata (CFrame.new(X, X, X)") end
+        	SafeZone = Global.SafeZone
+        else
+        	SafeZone = CFrame.new(0,-300,0)
+        end
+        
+        local ScriptStart = true
+        local Reset = false
+        local DeleteOnDeath = {}
+        local Activate
+        local Noclip
+        if Global.Key == nil then
+        	Activate = "F"
+        else
+        	Activate = tostring(Global.Key)     
+        end
+        
+        if Global.Noclip == nil then
+        	Noclip = false
+        else
+        	Noclip = Global.Noclip        
+        end
+        
+        if type(Noclip) ~= "boolean" then return error("Noclip value isn't a boolean") end
+        
+        function notify(Message)
+        	game:GetService("StarterGui"):SetCore("SendNotification", { 
+        		Title = "FE Invisible";
+        		Text = Message;
+        		Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150"})
+        	local sound = Instance.new("Sound")
+        	sound.SoundId = "rbxassetid://7046168694"
+        	SoundService:PlayLocalSound(sound)
+        end
+        
+        if Global.Running then
+        	return notify("Script is already running")
+        else
+        	Global.Running = true
+        end
+        
+        local IsInvisible = false
+        local WasInvisible = false
+        local Died = false
+        local LP = game:GetService("Players").LocalPlayer
+        local UserInputService = game:GetService("UserInputService")
+        repeat wait() until LP.Character
+        repeat wait() until LP.Character:FindFirstChild("Humanoid")
+        local RealChar = LP.Character or LP.CharacterAdded:Wait()
+        RealChar.Archivable = true
+        local FakeChar = RealChar:Clone()
+        FakeChar:WaitForChild("Humanoid").DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        FakeChar.Parent = game:GetService("Workspace")
+        
+        for _, child in pairs(FakeChar:GetDescendants()) do
+        	if child:IsA("BasePart") and child.CanCollide == true then
+        		child.CanCollide = false
+        	end
+        end
+        
+        FakeChar:SetPrimaryPartCFrame(SafeZone * CFrame.new(0, 5, 0))
+        
+        local Part
+        Part = Instance.new("Part", workspace)
+        Part.Anchored = false
+        Part.Size = Vector3.new(200, 1, 200)
+        Part.CFrame = SafeZone
+        Part.CanCollide = true
+    
+        
+        for i, v in pairs(FakeChar:GetDescendants()) do
+        	if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+        		v.Transparency = 0.7
+        	end
+        end
+        
+        for i, v in pairs(RealChar:GetChildren()) do
+        	if v:IsA("LocalScript") then
+        		local clone = v:Clone()
+        		clone.Disabled = true
+        		clone.Parent = FakeChar
+        	end
+        end
+        
+        function StopScript()
+        	if ScriptStart == false then return end
+        	if Died == false then
+        		if Restart == true then
+        			notify("The character used died!\nStopping...")
+        		else
+        			notify("Script successfuly ended !")
+        		end
+        		Part:Destroy()
+        		if IsInvisible and RealChar:FindFirstChild("HumanoidRootPart") then
+        			Visible() 
+        			WasInvisible = true
+        		end
+        		
+        		if IsInvisible == false and LP.Character:WaitForChild("Humanoid").Health == 0 then
+        			WasInvisible = true
+        		end
+        		if not RealChar:FindFirstChild("Humanoid") then
+        			Reset = true
+        			print("a")
+        		end
+        		
+        		game:GetService("Workspace").CurrentCamera.CameraSubject = RealChar:WaitForChild("Humanoid")
+        
+        		if FakeChar then
+        			FakeChar:Destroy()
+        		end
+        
+        		if WasInvisible then
+        			local char = LP.Character
+        			if char:FindFirstChildOfClass("Humanoid") then char:FindFirstChildOfClass("Humanoid"):ChangeState(15) end
+        			char:ClearAllChildren()
+        			local newChar = Instance.new("Model")
+        			newChar.Parent = workspace
+        			LP.Character = newChar
+        			wait()
+        			LP.Character = char
+        			newChar:Destroy()
+        			for _,v in pairs(DeleteOnDeath) do
+        				v:Destroy()
+        			end
+        			
+        		else
+        			for _,v in pairs(DeleteOnDeath) do
+        				v.ResetOnSpawn = true
+        			end
+        		end
+        		Global.Running = false
+        		ScriptStart = false
+        		if Restart == true then
+        		loadstring(game:HttpGet('https://raw.githubusercontent.com/Error-Cezar/Roblox-Scripts/main/FE-Invisible.lua'))()
+        		end
+        		
+        			LP.CharacterAdded:Connect(function()
+        				if Reset == false then return end
+        			loadstring(game:HttpGet('https://raw.githubusercontent.com/Error-Cezar/Roblox-Scripts/main/FE-Invisible.lua'))()
+        		end)
+        		
+        	end
+        end
+        
+        RealChar:WaitForChild("Humanoid").Died:Connect(function()
+        	StopScript()
+        end)
+        
+        
+        FakeChar:WaitForChild("Humanoid").Died:Connect(function()
+        	StopScript()
+        end)
+        
+        function Invisible()
+        	StoredCF = RealChar:GetPrimaryPartCFrame()
+        	
+            if First == true then
+        		First = false
+        		for _,v in pairs(LP:WaitForChild("PlayerGui"):GetChildren()) do 
+        	    	if v:IsA("ScreenGui") then
+        		    	if v.ResetOnSpawn == true then
+        				v.ResetOnSpawn = false
+        				table.insert(DeleteOnDeath, v)
+        			    end
+            		end
+            	end
+        	end
+        	
+        	if Noclip == true then
+        	    for _, child in pairs(FakeChar:GetDescendants()) do
+        		    if child:IsA("BasePart") and child.CanCollide == true then
+        	    		child.CanCollide = false
+            		end
+        		end
+        	end
+        	FakeChar:SetPrimaryPartCFrame(StoredCF)
+        	FakeChar:WaitForChild("HumanoidRootPart").Anchored = false
+        	LP.Character = FakeChar
+        	game:GetService("Workspace").CurrentCamera.CameraSubject = FakeChar:WaitForChild("Humanoid")
+        		for _, child in pairs(RealChar:GetDescendants()) do
+        			if child:IsA("BasePart") and child.CanCollide == true then
+        				child.CanCollide = false
+        			end
+        		end
+        
+        	RealChar:SetPrimaryPartCFrame(SafeZone * CFrame.new(0, 5, 0))
+        	--	RealChar:WaitForChild("HumanoidRootPart").Anchored = true
+        	RealChar:WaitForChild("Humanoid"):UnequipTools()
+        
+        	for i, v in pairs(FakeChar:GetChildren()) do
+        		if v:IsA("LocalScript") then
+        			v.Disabled = false
+        		end
+        	end
+        end
+        
+        function Visible()
+        	StoredCF = FakeChar:GetPrimaryPartCFrame()
+        	for _, child in pairs(RealChar:GetDescendants()) do
+        		if child:IsA("BasePart") and child.CanCollide == true then
+        			child.CanCollide = true
+        		end
+        	end
+        	RealChar:WaitForChild("HumanoidRootPart").Anchored = false
+        	RealChar:SetPrimaryPartCFrame(StoredCF)
+        	LP.Character = RealChar
+        	FakeChar:WaitForChild("Humanoid"):UnequipTools()
+        	game:GetService("Workspace").CurrentCamera.CameraSubject = RealChar:WaitForChild("Humanoid")
+        	for _, child in pairs(FakeChar:GetDescendants()) do
+        		if child:IsA("BasePart") and child.CanCollide == true then
+        			child.CanCollide = false
+        		end
+        	end
+        	FakeChar:SetPrimaryPartCFrame(SafeZone * CFrame.new(0, 5, 0))
+        	FakeChar:WaitForChild("HumanoidRootPart").Anchored = false
+        	for i, v in pairs(FakeChar:GetChildren()) do
+        		if v:IsA("LocalScript") then
+        			v.Disabled = true
+        		end
+        	end
+        end
+        
+        
+        UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        	if ScriptStart == false then return end
+        	if gameProcessed then return end
+        	if input.KeyCode.Name:lower() ~= Activate:lower() then return end
+        	if IsInvisible == false then
+        		Invisible()
+        		IsInvisible = true
+            else
+        		Visible()
+    		IsInvisible = false
+        	end
+        end)
+    end,
+    DoubleClick = true,
+    Tooltip = "Makes you invisible. (WIP. MAY NOT WORK)",
+})
+
+local LeftGroupBox = Tabs.Misc:AddLeftGroupbox('Misc')
+LeftGroupBox:AddButton({
+    Text = "Rejoin",
+    Func = function()
+        if #Players:GetPlayers() <= 1 then
+            Players.LocalPlayer:Kick("\nRejoining...")
+            task.wait()
+            TeleportService:Teleport(PlaceId, Players.LocalPlayer)
+        else
+            TeleportService:TeleportToPlaceInstance(PlaceId, JobId, Players.LocalPlayer)
+        end
+    end,
+    DoubleClick = true,
+    Tooltip = "Rejoins the game."
+})
+--local LeftGroupBox = Tabs.NonBeast:AddLeftGroupbox('Non-Beast functions')
+
 
 -- Library functions
 -- Sets the watermark visibility
@@ -320,9 +723,9 @@ Library.KeybindFrame.Visible = false; -- todo: add a function for this
 
 Library:OnUnload(function()
     WatermarkConnection:Disconnect()
-
-    print('Unloaded!')
     Library.Unloaded = true
+    clearEsps()
+    print('Unloaded!')
 end)
 
 -- UI Settings
