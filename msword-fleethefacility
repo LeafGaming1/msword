@@ -425,7 +425,7 @@ LeftGroupBox:AddToggle("NonBeastSprint", {
 })
 
 local LeftGroupBox = Tabs.Player:AddLeftGroupbox('Player functions')
-LeftGroupBox:AddButton({
+--[[LeftGroupBox:AddButton({
     Text = "Invisible (F)",
     
     Func = function()
@@ -676,6 +676,7 @@ LeftGroupBox:AddButton({
     DoubleClick = true,
     Tooltip = "Makes you invisible. (WIP. MAY NOT WORK)",
 })
+]]
 
 local LeftGroupBox = Tabs.Misc:AddLeftGroupbox('Misc')
 LeftGroupBox:AddButton({
