@@ -386,14 +386,19 @@ LeftGroupBox:AddToggle("NoFail", {
     Tooltip = "Prevents from failing the minigame when hacking",
     
     Callback = function(state)
+        local running
         while state do
+            if running then return end
+            running = true
             task.spawn(function()
                 while task.wait() do
+                    if not state then break end
                     game.ReplicatedStorage.RemoteEvent:FireServer("SetPlayerMinigameResult",true)
                 end
             end)
             task.wait(2)
         end
+        running = false
     end
 })
 LeftGroupBox:AddToggle("NonBeastSprint", {
@@ -425,7 +430,7 @@ LeftGroupBox:AddToggle("NonBeastSprint", {
 })
 
 local LeftGroupBox = Tabs.Player:AddLeftGroupbox('Player functions')
---[[LeftGroupBox:AddButton({
+LeftGroupBox:AddButton({
     Text = "Invisible (F)",
     
     Func = function()
@@ -674,9 +679,8 @@ local LeftGroupBox = Tabs.Player:AddLeftGroupbox('Player functions')
         end)
     end,
     DoubleClick = true,
-    Tooltip = "Makes you invisible. (WIP. MAY NOT WORK)",
+    Tooltip = "Makes you invisible. Uses a different script. (WIP. MAY NOT WORK)",
 })
-]]
 
 local LeftGroupBox = Tabs.Misc:AddLeftGroupbox('Misc')
 LeftGroupBox:AddButton({
