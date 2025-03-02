@@ -358,7 +358,7 @@ LeftGroupBox:AddToggle("EnableCrawl", {
             task.wait(5)
         end
         
-        if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == false then
+        if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == true then
             game:GetService("Players").LocalPlayer.TempPlayerStatsModule.DisableCrawl.Value = true
         end
     end
@@ -444,7 +444,7 @@ LeftGroupBox:AddButton({
         	if type(Global.SafeZone) ~= "userdata" then return error("CFrame must be a userdata (CFrame.new(X, X, X)") end
         	SafeZone = Global.SafeZone
         else
-        	SafeZone = CFrame.new(0,-300,0)
+        	SafeZone = CFrame.new(0, 5000, 0)
         end
         
         local ScriptStart = true
@@ -628,7 +628,6 @@ LeftGroupBox:AddButton({
         		end
         
         	RealChar:SetPrimaryPartCFrame(SafeZone * CFrame.new(0, 5, 0))
-        	--	RealChar:WaitForChild("HumanoidRootPart").Anchored = true
         	RealChar:WaitForChild("Humanoid"):UnequipTools()
         
         	for i, v in pairs(FakeChar:GetChildren()) do
@@ -696,6 +695,33 @@ LeftGroupBox:AddButton({
     end,
     DoubleClick = true,
     Tooltip = "Rejoins the game."
+})
+LeftGroupBox:AddToggle("QTP", {
+    Text = "Execute on teleport",
+    Default = true,
+    Tooltip = "Set to false to disable auto-execution",
+    
+    Callback = function(state)
+        local UnsupportPrinted
+        while state do
+            if queueonteleport then
+                local TeleportCheck = true
+                Players.LocalPlayer.OnTeleport:Connect(function(State)
+                	if state and (not TeleportCheck) and queueteleport then
+                		TeleportCheck = true
+                		--queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/LeafGaming1/msword/refs/heads/main/msword-fleethefacility'))()")
+                		warn("DEV")
+                	end
+                end)
+            else
+                if UnsupportPrinted then return end
+                UnsupportPrinted = true
+                warn("Your executor doesn't support this feature")
+            end
+            task.wait()
+        end
+        UnsupportPrinted = false
+    end
 })
 --local LeftGroupBox = Tabs.NonBeast:AddLeftGroupbox('Non-Beast functions')
 
