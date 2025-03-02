@@ -680,6 +680,7 @@ LeftGroupBox:AddButton({
     DoubleClick = true,
     Tooltip = "Makes you invisible. Uses a different script. (WIP. MAY NOT WORK)",
 })
+LeftGroupBox:AddLabel('Invisibility may make you invisible, \n\nbut may remove some important functions!', true)
 
 local LeftGroupBox = Tabs.Misc:AddLeftGroupbox('Misc')
 LeftGroupBox:AddButton({
@@ -709,8 +710,7 @@ LeftGroupBox:AddToggle("QTP", {
                 Players.LocalPlayer.OnTeleport:Connect(function(State)
                 	if state and (not TeleportCheck) and queueteleport then
                 		TeleportCheck = true
-                		--queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/LeafGaming1/msword/refs/heads/main/msword-fleethefacility'))()")
-                		warn("DEV")
+                		queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/LeafGaming1/msword/refs/heads/main/msword-fleethefacility'))()")
                 	end
                 end)
             else
