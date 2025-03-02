@@ -686,12 +686,17 @@ local LeftGroupBox = Tabs.Misc:AddLeftGroupbox('Misc')
 LeftGroupBox:AddButton({
     Text = "Rejoin",
     Func = function()
-        if #Players:GetPlayers() <= 1 then
-            Players.LocalPlayer:Kick("\nRejoining...")
+        if #game.Players:GetPlayers() <= 1 then
+            game.Players.LocalPlayer:Kick("\nRejoining...")
             task.wait()
-            TeleportService:Teleport(PlaceId, Players.LocalPlayer)
+            game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
         else
-            TeleportService:TeleportToPlaceInstance(PlaceId, JobId, Players.LocalPlayer)
+            if #game.Players:GetPlayers() == 5 then
+                game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
+                queueonteleport('warn("Server was too full. Joined a different game.")')
+            else
+                game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer)
+            end
         end
     end,
     DoubleClick = true,
