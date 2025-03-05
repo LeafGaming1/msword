@@ -76,6 +76,7 @@ inputBoxStroke.Transparency = 0.5 -- Semi-transparent border
 
 if _G.ug_key and _G.ug_key ~= "" then
     screenGui:Destroy()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming1/msword/main/msword-loader"))()
 end
 
 -- Capture input when Enter is pressed
@@ -83,7 +84,7 @@ inputBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
         -- Store the input in the global variable _G.ug_key
         _G.ug_key = inputBox.Text
-        --loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming/msword/games"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming1/msword/main/msword-loader"))()
         screenGui:Destroy()
     end
 end)
