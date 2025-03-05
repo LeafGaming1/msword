@@ -75,7 +75,7 @@ inputBoxStroke.Color = Color3.new(0, 0, 0) -- Black border
 inputBoxStroke.Transparency = 0.5 -- Semi-transparent border
 
 if _G.ug_key and _G.ug_key ~= "" then
-    screenGui:Destroy
+    screenGui:Destroy()
 end
 
 -- Capture input when Enter is pressed
