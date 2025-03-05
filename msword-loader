@@ -1,0 +1,29 @@
+local PlaceId = game.PlaceId
+local console = loadstring(game:HttpGet("https://raw.githubusercontent.com/notpoiu/Scripts/main/utils/console/main.lua"))()
+
+local function cPrint(name, success)
+    if success then
+        messageR = "[MSWORD] Loaded"..name
+        imageR = "rbxasset://textures/AudioDiscovery/done.png",
+        colorR = Color3.fromRGB(0, 255, 0)
+    else
+        messageR = "[MSWORD] Failed to load! Game with PlaceId "..PlaceId.." is either not supported. Or the script failed to load."
+        imageR = "rbxasset://textures/AudioDiscovery/error.png"
+        colorR = Color3.fromRGB(255, 0, 0)
+    end
+    console.custom_print({
+        message = messageR,
+        image = imageR,
+        color = colorR
+    })
+end
+
+if PlaceId == 4954096313 then -- Field Trip Z
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming1/msword/main/msword-fieldtripz"))()
+    cPrint("fieldtripz", true)
+elseif PlaceId == 893973440 then -- Flee the facility
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming1/msword/main/msword-fleethefacility"))()
+    cPrint("fleethefacility", true)
+else
+    cprint("", false)
+end
