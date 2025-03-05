@@ -1,0 +1,89 @@
+-- Create a ScreenGui to hold the GUI elements
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Create the Frame
+local frame = Instance.new("Frame")
+frame.Parent = screenGui
+
+-- Set the size to 30% of the screen
+frame.Size = UDim2.new(0.3, 0, 0.3, 0) -- 30% of the screen
+
+-- Set the anchor point to the center (0.5, 0.5)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+
+-- Center the Frame
+frame.Position = UDim2.new(0.5, 0, 0.5, 0) -- Center of the screen
+
+-- Set the background color to gray
+frame.BackgroundColor3 = Color3.new(0.5, 0.5, 0.5) -- Gray color
+
+-- Add rounded corners using UICorner
+local uiCorner = Instance.new("UICorner")
+uiCorner.Parent = frame
+uiCorner.CornerRadius = UDim.new(0.1, 0) -- Adjust the corner radius as needed
+
+-- Optional: Add a shadow effect using UIStroke
+local uiStroke = Instance.new("UIStroke")
+uiStroke.Parent = frame
+uiStroke.Thickness = 2
+uiStroke.Color = Color3.new(0, 0, 0) -- Black border
+uiStroke.Transparency = 0.5 -- Semi-transparent border
+
+-- Create the Title TextLabel
+local title = Instance.new("TextLabel")
+title.Parent = frame
+title.Text = "MSWORD KEYSYSTEM" -- Set the text
+title.Font = Enum.Font.FredokaOne -- Use Fredoka One font
+title.TextColor3 = Color3.new(1, 1, 1) -- White text
+title.TextScaled = true -- Automatically scale text to fit
+title.TextWrapped = true -- Wrap text if it exceeds the width
+title.Size = UDim2.new(1, 0, 0.3, 0) -- Take up 30% of the frame's height
+title.Position = UDim2.new(0, 0, 0, 0) -- Position at the top of the frame
+title.BackgroundTransparency = 1 -- Make the background transparent
+title.TextStrokeTransparency = 0.5 -- Add a subtle text outline for readability
+title.TextStrokeColor3 = Color3.new(0, 0, 0) -- Black outline
+title.TextXAlignment = Enum.TextXAlignment.Center -- Center text horizontally
+title.TextYAlignment = Enum.TextYAlignment.Center -- Center text vertically
+title.FontFace = Font.new("rbxassetid://FONT_ID_HERE", Enum.FontWeight.Bold) -- Bold text
+
+-- Create the Input Box (TextBox)
+local inputBox = Instance.new("TextBox")
+inputBox.Text = ""
+inputBox.Parent = frame
+inputBox.Size = UDim2.new(0.8, 0, 0.3, 0) -- 80% width, 30% height of the frame
+inputBox.Position = UDim2.new(0.1, 0, 0.5, 0) -- Center horizontally, below the title
+inputBox.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2) -- 60% darker than the background
+inputBox.TextColor3 = Color3.new(1, 1, 1) -- White text
+inputBox.PlaceholderText = "Enter text here..." -- Placeholder text
+inputBox.TextScaled = true -- Automatically scale text to fit
+inputBox.TextWrapped = true -- Wrap text if it exceeds the width
+inputBox.ClearTextOnFocus = false -- Keep text when focused
+inputBox.Font = Enum.Font.FredokaOne -- Use Fredoka One font
+inputBox.TextXAlignment = Enum.TextXAlignment.Center -- Center text horizontally
+
+-- Add rounded corners to the input box
+local inputBoxCorner = Instance.new("UICorner")
+inputBoxCorner.Parent = inputBox
+inputBoxCorner.CornerRadius = UDim.new(0.1, 0) -- Rounded corners
+
+-- Optional: Add a stroke to the input box
+local inputBoxStroke = Instance.new("UIStroke")
+inputBoxStroke.Parent = inputBox
+inputBoxStroke.Thickness = 1
+inputBoxStroke.Color = Color3.new(0, 0, 0) -- Black border
+inputBoxStroke.Transparency = 0.5 -- Semi-transparent border
+
+if _G.ug_key and _G.ug_key ~= "" then
+    screenGui:Destroy
+end
+
+-- Capture input when Enter is pressed
+inputBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        -- Store the input in the global variable _G.ug_key
+        _G.ug_key = inputBox.Text
+        --loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming/msword/games"))()
+        screenGui:Destroy()
+    end
+end)
