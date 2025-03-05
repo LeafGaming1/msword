@@ -3,7 +3,7 @@ local console = loadstring(game:HttpGet("https://raw.githubusercontent.com/notpo
 
 local function cPrint(name, success)
     if success then
-        messageR = "[MSWORD] Loaded"..name
+        messageR = "[MSWORD] Loaded "..name
         imageR = "rbxasset://textures/AudioDiscovery/done.png"
         colorR = Color3.fromRGB(0, 255, 0)
     else
