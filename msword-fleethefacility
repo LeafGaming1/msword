@@ -40,7 +40,7 @@ task.spawn(function()
     end
 end)
 getgenv().espscanintensity = 10
-
+local IsMobile = (DevicePlatform == Enum.Platform.Android or DevicePlatform == Enum.Platform.IOS);
 
 local LeftGroupBox = Tabs.Main:AddLeftGroupbox('ESPs')
 local function clearPlrEsp()
@@ -302,17 +302,29 @@ LeftGroupBox:AddToggle("InfiteSprint", {
     Callback = function(state)
         local player = game.Players.LocalPlayer
         
-        game.UserInputService.InputBegan:Connect(function(key)
-            if key.KeyCode == Enum.KeyCode.Q then
+        if IsMobile then
+            if state then
+                if game.Players.TempPlayerStatsModule.IsBeast then return end
                 game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 30
-            end
-        end)
-            
-        game.UserInputService.InputEnded:Connect(function(key)
-            if key.KeyCode == Enum.KeyCode.Q then
+            else
+                if game.Players.TempPlayerStatsModule.IsBeast then return end
                 game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-            end
-        end)
+            end            
+        else
+            game.UserInputService.InputBegan:Connect(function(key)
+                if key.KeyCode == Enum.KeyCode.Q then
+                    if game.Players.TempPlayerStatsModule.IsBeast then return end
+                    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 30
+                end
+            end)
+                
+            game.UserInputService.InputEnded:Connect(function(key)
+                if key.KeyCode == Enum.KeyCode.Q then
+                    if game.Players.TempPlayerStatsModule.IsBeast then return end
+                    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+                end
+            end)
+        end
     end
 })
 LeftGroupBox:AddToggle("NoSlow", {
@@ -409,23 +421,27 @@ LeftGroupBox:AddToggle("NonBeastSprint", {
     Callback = function(state)
         while state do
             if game.Players.LocalPlayer.TempPlayerStatsModule.IsBeast.Value == false then
-                game.UserInputService.InputBegan:Connect(function(key)
-                    if key.KeyCode == Enum.KeyCode.Q then
-                        if state then
-                            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 30
+                if IsMobile then
+                    game.Players.LocalPlayer.Humanoid.WalkSpeed = 30
+                else
+                    game.UserInputService.InputBegan:Connect(function(key)
+                        if key.KeyCode == Enum.KeyCode.Q then
+                            if state then
+                                game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 30
+                            end
                         end
-                    end
-                end)
-                
-                game.UserInputService.InputEnded:Connect(function(key)
-                    if key.KeyCode == Enum.KeyCode.Q then
-                        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-                    end
-                end)
+                    end)
+                    
+                    game.UserInputService.InputEnded:Connect(function(key)
+                        if key.KeyCode == Enum.KeyCode.Q then
+                            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+                        end
+                    end)
+                end
             end
             task.wait(2)
         end
-        
+        game.Players.LocalPlayer.Humanoid.WalkSpeed = 16
     end
 })
 
@@ -663,7 +679,10 @@ LeftGroupBox:AddButton({
         	end
         end
         
-        
+        if IsMobile then
+            notify("You are on mobile. Executing mobile keyboard script.")
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/Xxtan31/Ata/main/deltakeyboardcrack.txt", true))()
+        end
         UserInputService.InputBegan:Connect(function(input, gameProcessed)
         	if ScriptStart == false then return end
         	if gameProcessed then return end
