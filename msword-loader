@@ -18,12 +18,12 @@ local function cPrint(name, success)
     })
 end
 
-if PlaceId == 4954096313 then -- Field Trip Z
+if PlaceId == 5096191125 then -- Field Trip Z
     loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming1/msword/main/msword-fieldtripz"))()
     cPrint("fieldtripz", true)
 elseif PlaceId == 893973440 then -- Flee the facility
     loadstring(game:HttpGet("https://raw.githubusercontent.com/LeafGaming1/msword/main/msword-fleethefacility"))()
     cPrint("fleethefacility", true)
 else
-    cprint("", false)
+    cPrint("", false)
 end
